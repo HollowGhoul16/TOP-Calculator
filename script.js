@@ -15,6 +15,7 @@ function divide(a, b) {
     return a/b;
 }
 
+// THIS CODE DOESNT LOOK GOOD FOR LARGE NUMBERS
 function operate(op1, op2, operator) {
     let result = 0;
     switch (operator) {
@@ -43,59 +44,66 @@ function operate(op1, op2, operator) {
     
     result = Math.round(+result * ROUNDING) / ROUNDING;
     result = result.toString();
-    if(result.length > 14) result = roundLargeNumber(result);
+    // if(result.length > 12) result = roundLargeNumber(result);
     display.textContent = result;
     operand1 = "0";
     operator = "";
 }
 
-function roundLargeNumber(result) {
-    let buffer = result.length - 14;
-    let exponent = 0;
-    if(result.includes("e")) {
-        exponent = +(result.slice(result.indexOf("e") + 1));
-        buffer -= exponent.toString().length - 1;
-        result = Math.round(+result * buffer) / buffer;
-        result = result.toString().slice(0, result.toString().indexOf("e")) + `e+${exponent + buffer}`;
-    }
-    else {
-        result = Math.round(+result * buffer) / buffer;
-        result = result.toString() + `e+${exponent + buffer}`;
-    }
-    return result;
-}
+// In progress if I ever come back to this, to handle large numbers displaying correctly in the calculator
+// function roundLargeNumber(result) {
+//     let buffer = result.length - 12;
+//     let bufferExponent = +`10e${buffer-1}`;
+//     let exponent = 0;
+//     if(result.includes("e")) {
+//         exponent = +(result.slice(result.indexOf("e") + 1));
+//         buffer -= exponent.toString().length - 2;
+//         result = Math.round(+result * buffer) / buffer;
+//         result = result.toString().slice(0, result.toString().indexOf("e")) + `e+${exponent + buffer}`;
+//     }
+//     else {
+//         result = Math.round(+result * bufferExponent) / bufferExponent;
+//         result = result.toString() + `e+${buffer}`;
+//     }
+//     return result;
+// }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Handles overwriting the display and appending the clicked number to the display
 function updateDisplay(number) {
-    if(display.textContent == "0" || overwrite == true) {
+    if(display.textContent == "0" || overwriteDisplay == true) {
         display.textContent = number;
-        if(overwrite == true) overwrite = false;
+        if(overwriteDisplay == true) overwriteDisplay = false;
         return;
     }
     display.textContent += number;
 }
 
+// Has multiple checks to see what state the calculator
 function operatorClicked(op) {
-    if(operator == "" && op == "=") return;
+    if(operator == "" && op == "=") return; // Makes sure we are not hitting equals early
+
     if(operator == "") {
         operator = op;
         operand1 = display.textContent;
-        overwrite = true;
+        overwriteDisplay = true;
     }
     else {
-        if(overwrite == true) {
+        // If we have yet to put in a new operand, just update the operator
+        if(overwriteDisplay == true) {
+            if(op == "=") return;
             operator = op;
             return;
         }
-        operand2 = display.textContent;
-        overwrite = true;
-        operate(operand1, operand2, operator);
+        overwriteDisplay = true;
+        operate(operand1, display.textContent, operator);
+        
         if(op != "=") {
             operator = op;
             operand1 = display.textContent;
         }
         else {
             operand1 = "0";
-            operand2 = "0";
             operator = "";
         }
     }
@@ -109,24 +117,26 @@ const clearButton = document.querySelector("#clear");
 clearButton.addEventListener("click", () => {
     display.textContent = "0";
     operand1 = "0";
-    operand2 = "0";
     operator = "";
 });
 
+// Handles toggling the sign for operands and results
 const signButton = document.querySelector("#sign");
 signButton.addEventListener("click", () => {
     if(!display.textContent.includes("-") && display.textContent != "0") display.textContent = "-" + display.textContent;
     else if(display.textContent.includes("-")) display.textContent = display.textContent.slice(1);
 });
 
+// Divides the current displayed number by 100
 const percentButton = document.querySelector("#percent");
 percentButton.addEventListener("click", () => display.textContent = (+display.textContent / 100).toString());
 
+// Handles multiple decimal points and if the display needs to be overwritten
 const decimalButton = document.querySelector("#decimal");
 decimalButton.addEventListener("click", () => {
-    if(overwrite == true) {
+    if(overwriteDisplay == true) {
         display.textContent = "0.";
-        overwrite = false;
+        overwriteDisplay = false;
     }
     else if(!display.textContent.includes(".")) display.textContent += ".";
 });
@@ -139,8 +149,7 @@ const operatorButtons = document.querySelectorAll(".operator");
 operatorButtons.forEach(op => op.addEventListener("click", () => operatorClicked(op.textContent)));
 
 // Default values
-const ROUNDING = 10e10;
+const ROUNDING = 10e4; // 10^5, allows 5 decimal places maximum
 let operand1 = "0";
-let operand2 = "0";
 let operator = "";
-let overwrite = false;
+let overwriteDisplay = false;
